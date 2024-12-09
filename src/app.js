@@ -6,37 +6,52 @@ let model;
 // Fungsi untuk memulai server Hapi
 const startServer = async () => {
     try {
+
+
         // Membuat instance server Hapi
         const server = Hapi.server({
             port: 3000,
             host: 'localhost',
         });
 
-        // Route untuk memuat model dan prediksi
+        // Route untuk prediksi
         server.route({
             method: 'POST',
             path: '/predict',
             handler: async (request, h) => {
                 try {
-                    // Memuat model setiap kali permintaan diterima
-                    model = await loadModel();
 
+                    model = await loadModel();
                     const { ph, turbidity, temperature } = request.payload;
 
                     // Validasi input data
                     if (ph === undefined || turbidity === undefined || temperature === undefined) {
-                        return h.response({ error: 'Input data harus mencakup ph, turbidity, dan temperature' }).code(400);
+                        return h
+                            .response({ 
+                                error: 'Input data harus mencakup ph, turbidity, dan temperature' 
+                            })
+                            .code(400);
                     }
 
                     // Buat array input dari data yang diterima
                     const inputData = [ph, turbidity, temperature];
 
                     // Prediksi berdasarkan input data
-                    const result = await predict(model, inputData);
+                    const { result, recommendation } = await predict(model, inputData);
 
-                    return { result }; // Mengirimkan hasil prediksi (baik, sedang, buruk)
+                    // Respons JSON dengan hasil dan rekomendasi
+                    return h.response({ 
+                        status: 'success',
+                        result,
+                        recommendation 
+                    }).code(200);
                 } catch (error) {
-                    return h.response({ error: 'Terjadi kesalahan saat memprediksi' }).code(500);
+                    console.error('Error saat memproses prediksi:', error);
+                    return h
+                        .response({ 
+                            error: 'Terjadi kesalahan saat memproses prediksi' 
+                        })
+                        .code(500);
                 }
             }
         });
