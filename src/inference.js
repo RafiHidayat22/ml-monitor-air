@@ -1,16 +1,28 @@
 const tf = require('@tensorflow/tfjs-node');
+require('dotenv').config();
 
 // Fungsi untuk memuat model
 async function loadModel() {
     try {
-        const model = await tf.loadLayersModel('file://models/model.json');
+        const modelPath = process.env.MODEL1_URL;
+        if (!modelPath) {
+            throw new Error('MODEL_PATH is not defined in the .env file');
+        }
+        const model = await tf.loadLayersModel(modelPath);
         console.log('Model berhasil dimuat!');
+        
+        // Cek apakah model memiliki fungsi predict
+        if (typeof model.predict !== 'function') {
+            throw new Error('Model tidak memiliki metode predict');
+        }
+
         return model;
     } catch (error) {
         console.error('Gagal memuat model:', error);
         throw error;
     }
 }
+
 
 // Fungsi untuk memberikan rekomendasi spesifik
 function generateRecommendation(result, ph, turbidity, temperature) {
